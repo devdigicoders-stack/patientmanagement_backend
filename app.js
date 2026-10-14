@@ -27,14 +27,32 @@ app.use(
   })
 );
 
-// CORS Configuration - Allow only CLIENT_URL with Credentials
-const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+// CORS Configuration - Multi-origin support with credentials for Vercel & local development
+const allowedOrigins = [
+  "https://patientmanagement-adminpanel.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:3000",
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: clientUrl,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or Postman)
+      if (!origin) return callback(null, true);
+      const cleanOrigin = origin.replace(/\/+$/, "");
+      const isAllowed = allowedOrigins.some(
+        (allowed) => allowed.replace(/\/+$/, "") === cleanOrigin
+      );
+      if (isAllowed) {
+        return callback(null, true);
+      }
+      return callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
   })
 );
 

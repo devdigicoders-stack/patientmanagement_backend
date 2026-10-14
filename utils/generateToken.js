@@ -8,11 +8,11 @@ export const generateToken = (res, userId) => {
 
   const isProduction = process.env.NODE_ENV === "production";
 
-  // Set JWT as HttpOnly, Secure cookie
+  // Set JWT as HttpOnly, Secure, SameSite=None cookie for cross-site (Vercel <-> Render)
   res.cookie("token", token, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? "strict" : "lax",
+    sameSite: isProduction ? "none" : "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 Days
   });
 

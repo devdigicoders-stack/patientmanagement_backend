@@ -43,7 +43,7 @@ export const loginUser = async (req, res, next) => {
     await user.save();
 
     // Generate JWT & set HttpOnly cookie
-    generateToken(res, user._id);
+    const token = generateToken(res, user._id);
 
     // Audit Log
     await logAudit({
@@ -58,6 +58,7 @@ export const loginUser = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       message: "Login successful",
+      token,
       data: {
         id: user._id,
         name: user.name,
@@ -66,6 +67,7 @@ export const loginUser = async (req, res, next) => {
         role: user.role,
         department: user.department,
         avatar: user.avatar,
+        token,
       },
     });
   } catch (error) {
@@ -87,8 +89,11 @@ export const logoutUser = async (req, res, next) => {
       });
     }
 
+    const isProduction = process.env.NODE_ENV === "production";
     res.cookie("token", "", {
       httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       expires: new Date(0),
     });
 
@@ -260,8 +265,11 @@ export const changeEmail = async (req, res, next) => {
     });
 
     // Invalidate session cookie immediately so user is logged out on the server
+    const isProduction = process.env.NODE_ENV === "production";
     res.cookie("token", "", {
       httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       expires: new Date(0),
     });
 
